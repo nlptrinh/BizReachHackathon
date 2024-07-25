@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <script type="text/javascript"> var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }}; </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+    <link rel='shortcut icon' type='image/x-icon' href='/static/images/favicon.ico' />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.css" rel="stylesheet" type="text/css">
+
+
+    <script src="https://d3js.org/d3.v3.min.js"> </script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.js"></script>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    {% block imports %}
+    {% endblock %}
+
+    <!-- Bootstrap Core CSS -->
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="/static/css/sb-admin.css" rel="stylesheet">
+
+    <!-- Morris Charts CSS -->
+    <link href="/static/css/plugins/morris.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="/static/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body>
+    <div id="wrapper">
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/"> Booster </a>
+            </div>
+            <!-- Top Menu Items -->
+            <ul class="nav navbar-right top-nav">
+                <li class="dropdown">
+                    <a href="#"><i class="fa fa-user"></i> {{ username }} </a>
+                </li>
+            </ul>
+            <!-- Sidebar Menu Items - These collapse to the responsive navigation menu on small screens -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav side-nav">
+                    <li class="active">
+                        <a href="/"><i class="fa fa-fw fa-dashboard"></i> Dashboard</a>
+                    </li>
+                    <li>
+                        <a href="/"><i class="fa fa-fw fa-dashboard"></i> About</a>
+                    </li>
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </nav>
+
+		{% block body %}
+		{% endblock %}
+		
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- jQuery -->
+    <script src="/static/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="/static/js/bootstrap.min.js"></script>
+
+    <!-- Morris Charts JavaScript -->
+    <script src="/static/js/plugins/morris/raphael.min.js"></script>
+    <script src="/static/js/plugins/morris/morris.min.js"></script>
+    <script src="/static/js/plugins/morris/morris-data.js"></script>
+
+    {% block footer %}
+    {% endblock %}
+
+</body>
+
+
+
+<script type="text/javascript">
+      $.getJSON('/_get_pie_data', {
+          username: "{{ username }}" ,
+      }, function(data) {
+          var width = 300,
+              height = 300,
+              radius = Math.min(width, height) / 2;
+
+          var color = d3.scale.ordinal()
+              .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+          var arc = d3.svg.arc()
+              .outerRadius(radius - 10)
+              .innerRadius(radius - 70);
+
+          var pie = d3.layout.pie()
+              .sort(null)
+              .value(function (d) {
+              return d.total;
+          });
+
+          var svg = d3.select(".pie").append("svg")
+              .attr("width", width)
+              .attr("height", height)
+              .append("g")
+              .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+              var g = svg.selectAll(".arc")
+                  .data(pie(data))
+                  .enter().append("g")
+                  .attr("class", "arc");
+
+              g.append("path")
+                  .attr("d", arc)
+                  .style("fill", function (d) {
+                  return color(d.data.type);
+              });
+
+              g.append("text")
+                  .attr("transform", function (d) {
+                  return "translate(" + arc.centroid(d) + ")";
+              })
+                  .attr("dy", ".1em")
+                  .style("text-anchor", "middle")
+                  .text(function (d) {
+                  return d.data.type;
+              });
+      });
+</script>
+
+
+
+<script>
+    $.getJSON('/_get_treemap_data', {
+          username: "{{ username }}" ,
+      }, function(ret_data) {
+        var margin = {top: 30, right: 0, bottom: 20, left: 0},
+            width = 960,
+            height = 500 - margin.top - margin.bottom,
+            formatNumber = d3.format(",%"),
+            colorDomain = [-.6, 0, .6],
+            colorRange = ["#373a93", 'white', "#936638"],
+            transitioning;
+
+// sets x and y scale to determine size of visible boxes
+        var x = d3.scale.linear()
+            .domain([0, width])
+            .range([0, width]);
+
+        var y = d3.scale.linear()
+            .domain([0, height])
+            .range([0, height]);
+
+// adding a color scale
+        var color = d3.scale.linear()
+            .domain(colorDomain)
+            .range(colorRange);
+
+// introduce color scale here
+
+        var treemap = d3.layout.treemap()
+            .children(function (d, depth) {
+                return depth ? null : d._children;
+            })
+            .sort(function (a, b) {
+                return a.value - b.value;
+            })
+            .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
+            .round(false);
+
+        var svg = d3.select(".treemap").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.bottom + margin.top)
+            .style("margin-left", -margin.left + "px")
+            .style("margin.right", -margin.right + "px")
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+            .style("shape-rendering", "crispEdges");
+
+        var grandparent = svg.append("g")
+            .attr("class", "grandparent");
+
+        grandparent.append("rect")
+            .attr("y", -margin.top)
+            .attr("width", width)
+            .attr("height", margin.top);
+
+        grandparent.append("text")
+            .attr("x", 6)
+            .attr("y", 6 - margin.top)
+            .attr("dy", ".75em");
+
+        var legend = d3.select("#legend").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", 30)
+            .attr('class', 'legend')
+            .selectAll("g")
+            .data([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+            .enter()
+            .append('g')
+
+// functions
+
+        function initialize(root) {
+            root.x = root.y = 0;
+            root.dx = width;
+            root.dy = height;
+            root.depth = 0;
+        }
+
+        // Aggregate the values for internal nodes. This is normally done by the
+        // treemap layout, but not here because of our custom implementation.
+        // We also take a snapshot of the original children (_children) to avoid
+        // the children being overwritten when when layout is computed.
+        function accumulate(d) {
+            return (d._children = d.children)
+                // recursion step, note that p and v are defined by reduce
+                ? d.value = d.children.reduce(function (p, v) {
+                    return p + accumulate(v);
+                }, 0)
+                : d.value;
+        }
+
+
+        // Compute the treemap layout recursively such that each group of siblings
+        // uses the same size (1×1) rather than the dimensions of the parent cell.
+        // This optimizes the layout for the current zoom state. Note that a wrapper
+        // object is created for the parent node for each group of siblings so that
+        // the parent’s dimensions are not discarded as we recurse. Since each group
+        // of sibling was laid out in 1×1, we must rescale to fit using absolute
+        // coordinates. This lets us use a viewport to zoom.
+        function layout(d) {
+            if (d._children) {
+                // treemap nodes comes from the treemap set of functions as part of d3
+                treemap.nodes({_children: d._children});
+                d._children.forEach(function (c) {
+                    c.x = d.x + c.x * d.dx;
+                    c.y = d.y + c.y * d.dy;
+                    c.dx *= d.dx;
+                    c.dy *= d.dy;
+                    c.parent = d;
+                    // recursion
+                    layout(c);
+                });
+            }
+        }
+
+        function colorIncrements(d) {
+            return (colorDomain[colorDomain.length - 1] - colorDomain[0]) / 18 * d + colorDomain[0];
+        }
+
+
+        legend.append("rect")
+            .attr("x", function (d) {
+                return margin.left + d * 40
+            })
+            .attr("y", 0)
+            .attr("fill", function (d) {
+                return color(colorIncrements(d))
+            })
+            .attr('width', '40px')
+            .attr('height', '40px')
+
+
+        legend.append("text")
+            .text(function (d) {
+                return formatNumber(colorIncrements(d))
+            })
+            .attr('y', 20)
+            .attr('x', function (d) {
+                return margin.left + d * 40 + 20
+            });
+
+// determines if white or black will be better contrasting color
+        function getContrast50(hexcolor) {
+            return (parseInt(hexcolor.replace('#', ''), 16) > 0xffffff / 3) ? 'black' : 'white';
+        }
+
+        d3.json(ret_data, function (root) {
+            console.log(root)
+            initialize(root);
+            accumulate(root);
+            layout(root);
+            display(root);
+
+            function display(d) {
+                grandparent
+                    .datum(d.parent)
+                    .on("click", transition)
+                    .select("text")
+                    .text(name(d))
+
+                // color header based on grandparent's rate
+                grandparent
+                    .datum(d.parent)
+                    .select("rect")
+                    .attr("fill", function () {
+                        console.log(color(d.rate));
+                        return color(d['rate'])
+                    })
+
+                var g1 = svg.insert("g", ".grandparent")
+                    .datum(d)
+                    .attr("class", "depth");
+
+                var g = g1.selectAll("g")
+                    .data(d._children)
+                    .enter().append("g");
+
+                g.filter(function (d) {
+                    return d._children;
+                })
+                    .classed("children", true)
+                    .on("click", transition);
+
+                g.selectAll(".child")
+                    .data(function (d) {
+                        return d._children || [d];
+                    })
+                    .enter().append("rect")
+                    .attr("class", "child")
+                    .call(rect);
+
+                g.append("rect")
+                    .attr("class", "parent")
+                    .call(rect)
+                    .append("title")
+                    .text(function (d) {
+                        console.log(typeof (d.value), d.value);
+                        return d.name + ', Cases of TB: ' + d.value + ', percent change: ' + formatNumber(d.rate);
+                    });
+
+                g.append("text")
+                    .attr("dy", ".75em")
+                    .text(function (d) {
+                        return d.name;
+                    })
+                    .call(text);
+
+                function transition(d) {
+                    if (transitioning || !d) return;
+                    transitioning = true;
+
+                    var g2 = display(d),
+                        t1 = g1.transition().duration(750),
+                        t2 = g2.transition().duration(750);
+
+                    // Update the domain only after entering new elements.
+                    x.domain([d.x, d.x + d.dx]);
+                    y.domain([d.y, d.y + d.dy]);
+
+                    // Enable anti-aliasing during the transition.
+                    svg.style("shape-rendering", null);
+
+                    // Draw child nodes on top of parent nodes.
+                    svg.selectAll(".depth").sort(function (a, b) {
+                        return a.depth - b.depth;
+                    });
+
+                    // Fade-in entering text.
+                    g2.selectAll("text").style("fill-opacity", 0);
+
+                    // Transition to the new view.
+                    t1.selectAll("text").call(text).style("fill-opacity", 0);
+                    t2.selectAll("text").call(text).style("fill-opacity", 1);
+                    t1.selectAll("rect").call(rect);
+                    t2.selectAll("rect").call(rect);
+
+                    // Remove the old node when the transition is finished.
+                    t1.remove().each("end", function () {
+                        svg.style("shape-rendering", "crispEdges");
+                        transitioning = false;
+                    });
+                }
+
+                return g;
+            }
+
+            function text(text) {
+                text.attr("x", function (d) {
+                    return x(d.x) + 6;
+                })
+                    .attr("y", function (d) {
+                        return y(d.y) + 6;
+                    })
+                    .attr("fill", function (d) {
+                        return getContrast50(color(parseFloat(d.rate)))
+                    });
+            }
+
+            function rect(rect) {
+                rect.attr("x", function (d) {
+                    return x(d.x);
+                })
+                    .attr("y", function (d) {
+                        return y(d.y);
+                    })
+                    .attr("width", function (d) {
+                        return x(d.x + d.dx) - x(d.x);
+                    })
+                    .attr("height", function (d) {
+                        return y(d.y + d.dy) - y(d.y);
+                    })
+                    .attr("fill", function (d) {
+                        return color(parseFloat(d.rate));
+                    });
+            }
+
+            function name(d) {
+                return d.parent
+                    ? name(d.parent) + "." + d.name
+                    : d.name;
+            }
+        });
+    });
+
+</script>
+
+
+<script>
+    $.getJSON('/_get_chart1_data', {
+          username: "{{ username }}" ,
+      }, function(chartData) {
+        /* chart.js chart examples */
+        var chBar = document.getElementById("chBar");
+        if (chBar) {
+            new Chart(chBar, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    scales: {
+                        xAxes: [{
+                            barPercentage: 0.4,
+                            categoryPercentage: 0.5
+                        }],
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: false
+                            }
+                        }]
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            });
+        }
+    });
+</script>
+
+<script>
+    $.getJSON('/_get_line_data', {
+          username: "{{ username }}" ,
+      }, function(line_data) {
+        var ctxL = document.getElementById("lineChart").getContext('2d');
+        var myLineChart = new Chart(ctxL, {
+            type: 'line',
+            data: line_data,
+            options: {
+                responsive: true
+            }
+        });
+    });
+
+</script>
+</html>
